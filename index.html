@@ -1,0 +1,763 @@
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title> z's shipz </title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600&display=swap');
+
+    body {
+      margin: 0;
+      background-color: #090d16;
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .game-font {
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    /* Expansive Responsive Canvas Container maintaining 1100:800 aspect ratio */
+    .canvas-wrapper {
+      position: relative;
+      width: 96vw;
+      max-width: 1100px;
+      aspect-ratio: 1100 / 800;
+      max-height: 74vh;
+      margin: 0 auto;
+      box-shadow: 0 0 40px rgba(56, 189, 248, 0.22);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 2px solid rgba(56, 189, 248, 0.35);
+      background: radial-gradient(circle at center, #111827 0%, #030712 100%);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Styled Navigation Buttons */
+    .nav-btn {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 2px solid #38bdf8;
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+      transition: all 0.1s ease;
+      touch-action: manipulation;
+    }
+
+    .nav-btn:active, .nav-btn.active-press {
+      transform: translateY(2px) scale(0.97);
+      background: linear-gradient(145deg, #0284c7, #0369a1);
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
+      border-color: #bae6fd;
+    }
+
+    /* Subtle Footer Styling */
+    .creator-footer {
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center p-2 sm:p-4">
+
+  <!-- Top Header with Game Title & Stats -->
+  <header class="w-[96vw] max-w-[1100px] flex flex-col sm:flex-row items-center justify-between gap-2 mb-2">
+    <h1 class="game-font text-2xl sm:text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 drop-shadow">
+       z's shipz 
+    </h1>
+
+    <div class="flex items-center gap-3 text-xs sm:text-sm bg-slate-900/90 px-4 py-1.5 rounded-full border border-slate-800 shadow-inner">
+      <div class="flex items-center gap-1.5">
+        <span class="text-slate-400">SCORE:</span>
+        <span id="scoreDisplay" class="game-font font-bold text-cyan-400">0</span>
+      </div>
+      <span class="text-slate-700">|</span>
+      <div class="flex items-center gap-1.5">
+        <span class="text-slate-400">LOOP:</span>
+        <span id="loopTimerDisplay" class="game-font font-bold text-amber-400">10.0s</span>
+      </div>
+      <span class="text-slate-700">|</span>
+      <div class="flex items-center gap-1">
+        <span class="text-slate-400">FPS:</span>
+        <span id="fpsDisplay" class="game-font font-bold text-emerald-400">30</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Game Area -->
+  <main class="w-full flex-1 flex flex-col items-center justify-center">
+    <div class="canvas-wrapper">
+      <canvas id="game" width="1100" height="800"></canvas>
+
+      <!-- Game Over Overlay Screen -->
+      <div id="gameOverScreen" class="hidden absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-20">
+        <p class="text-xs uppercase tracking-[0.25em] text-rose-400 font-semibold mb-1">Mission Terminated</p>
+        <h2 class="game-font text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-indigo-400 mb-2">
+           z's shipz 
+        </h2>
+        <p class="text-slate-400 text-sm sm:text-base mb-6">Hull integrity compromised in the time loop sector.</p>
+
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl px-8 py-4 mb-6 flex gap-8 shadow-lg">
+          <div>
+            <div class="text-xs text-slate-400 uppercase tracking-wider">Final Score</div>
+            <div id="finalScore" class="game-font text-2xl sm:text-3xl font-bold text-cyan-400 mt-1">0</div>
+          </div>
+          <div class="border-r border-slate-800"></div>
+          <div>
+            <div class="text-xs text-slate-400 uppercase tracking-wider">Loops Survived</div>
+            <div id="finalLoops" class="game-font text-2xl sm:text-3xl font-bold text-amber-400 mt-1">0</div>
+          </div>
+        </div>
+
+        <button id="restartBtn" class="game-font px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-950 bg-gradient-to-r from-cyan-400 to-sky-400 hover:from-cyan-300 hover:to-sky-300 shadow-lg shadow-cyan-500/25 active:scale-95 transition-all cursor-pointer">
+          PLAY AGAIN
+        </button>
+      </div>
+    </div>
+
+    <!-- Left and Right Navigation Controls (Fire button removed) -->
+    <div class="w-[96vw] max-w-[1100px] mt-3 sm:mt-4 flex items-center justify-center gap-6 sm:gap-12 px-4">
+      <button id="btnLeft" aria-label="Move Left" class="nav-btn flex-1 max-w-[260px] py-3.5 sm:py-4 rounded-2xl flex items-center justify-center gap-3 text-sky-300 font-bold tracking-wider cursor-pointer select-none">
+        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+          <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/>
+        </svg>
+        <span class="game-font text-sm sm:text-base">LEFT</span>
+      </button>
+
+      <button id="btnRight" aria-label="Move Right" class="nav-btn flex-1 max-w-[260px] py-3.5 sm:py-4 rounded-2xl flex items-center justify-center gap-3 text-sky-300 font-bold tracking-wider cursor-pointer select-none">
+        <span class="game-font text-sm sm:text-base">RIGHT</span>
+        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+          <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+        </svg>
+      </button>
+    </div>
+  </main>
+
+  <!-- Slightly Reduced Size Footer -->
+  <footer class="w-full text-center py-2.5 mt-2">
+    <p class="creator-footer font-semibold uppercase">
+      DEVELOPED AND CREATED BY ALTAF
+    </p>
+  </footer>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    // UI Elements
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const loopTimerDisplay = document.getElementById('loopTimerDisplay');
+    const fpsDisplay = document.getElementById('fpsDisplay');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const finalScoreEl = document.getElementById('finalScore');
+    const finalLoopsEl = document.getElementById('finalLoops');
+    const restartBtn = document.getElementById('restartBtn');
+    const btnLeft = document.getElementById('btnLeft');
+    const btnRight = document.getElementById('btnRight');
+
+    // Constant 30 FPS Configuration
+    const TARGET_FPS = 30;
+    const FRAME_INTERVAL = 1000 / TARGET_FPS; // ~33.33ms per frame
+    let lastFrameTime = performance.now();
+    let frameCount = 0;
+    let fpsTimer = performance.now();
+
+    // Time Loop & Game State Variables
+    const loopTime = 10000; // 10 seconds per time loop
+    let loopStart = Date.now();
+    let loopsCompleted = 0;
+    let score = 0;
+    let isGameOver = false;
+
+    // Input State (Left & Right navigation)
+    const keys = {
+      left: false,
+      right: false
+    };
+
+    // Player Ship Object (Scaled for larger 1100x800 canvas)
+    const player = {
+      x: canvas.width / 2 - 32,
+      y: canvas.height - 125,
+      width: 64,
+      height: 68,
+      speed: 15, // Tuned for 30 FPS across 1100px width
+      bankAngle: 0,
+      hoverTick: 0
+    };
+
+    // Exhaust Particles for the Cyber-Interceptor
+    let exhaustParticles = [];
+
+    // Background Starfield (Increased density for 1100x800 resolution)
+    const stars = Array.from({ length: 95 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2.5 + 0.8,
+      speed: Math.random() * 3.8 + 1.5
+    }));
+
+    // Obstacles Array
+    let obstacles = [];
+
+    // Spawn an obstacle block/asteroid
+    function spawnObstacle() {
+      const size = Math.floor(Math.random() * 48) + 42;
+      const x = Math.random() * (canvas.width - size);
+      const speed = (Math.random() * 6 + 6.5) + Math.min(loopsCompleted * 0.95, 7.5);
+      const hues = ['#38bdf8', '#f43f5e', '#a855f7', '#fbbf24'];
+      const color = hues[Math.floor(Math.random() * hues.length)];
+
+      obstacles.push({
+        x,
+        y: -size,
+        width: size,
+        height: size,
+        speed,
+        color
+      });
+    }
+
+    // Initialize or Reset Loop
+    function resetLoop(fullReset = false) {
+      loopStart = Date.now();
+
+      if (fullReset) {
+        score = 0;
+        loopsCompleted = 0;
+        isGameOver = false;
+        player.x = canvas.width / 2 - player.width / 2;
+        player.bankAngle = 0;
+        obstacles = [];
+        exhaustParticles = [];
+        gameOverScreen.classList.add('hidden');
+      } else {
+        // Time Loop completed bonus!
+        loopsCompleted++;
+        score += 100;
+        // Clear obstacles close to player on loop warp
+        obstacles = obstacles.filter(obs => obs.y < canvas.height * 0.45);
+      }
+
+      scoreDisplay.textContent = score;
+    }
+
+    // Trigger Game Over State
+    function triggerGameOver() {
+      isGameOver = true;
+      keys.left = false;
+      keys.right = false;
+      btnLeft.classList.remove('active-press');
+      btnRight.classList.remove('active-press');
+      finalScoreEl.textContent = score;
+      finalLoopsEl.textContent = loopsCompleted;
+      gameOverScreen.classList.remove('hidden');
+    }
+
+    // Axis-Aligned Bounding Box Collision Detection
+    function checkCollision(ax, ay, aw, ah, bx, by, bw, bh) {
+      const padding = 8; // Fair hitbox forgiveness matching armored core
+      return (
+        ax + padding < bx + bw &&
+        ax + aw - padding > bx &&
+        ay + padding < by + bh &&
+        ay + ah - padding > by
+      );
+    }
+
+    // Spawn and Update Exhaust Trail Particles
+    function updateExhaustParticles() {
+      const cx = player.x + player.width / 2;
+      const tailY = player.y + player.height - 8;
+
+      // Spawn new thruster particles each frame
+      for (let i = 0; i < 3; i++) {
+        const isCenter = i === 0;
+        const offsetX = isCenter ? (Math.random() - 0.5) * 4 : (i === 1 ? -14 : 14) + (Math.random() - 0.5) * 3;
+        exhaustParticles.push({
+          x: cx + offsetX,
+          y: tailY + Math.random() * 4,
+          vx: (Math.random() - 0.5) * 1.2 + (player.bankAngle * 2),
+          vy: Math.random() * 4 + 5,
+          size: isCenter ? Math.random() * 3.5 + 2 : Math.random() * 2.8 + 1.5,
+          alpha: 0.9,
+          color: isCenter ? '#38bdf8' : (Math.random() > 0.4 ? '#f59e0b' : '#ef4444')
+        });
+      }
+
+      // Update existing particles
+      for (let i = exhaustParticles.length - 1; i >= 0; i--) {
+        const p = exhaustParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.11;
+        p.size *= 0.92;
+        if (p.alpha <= 0) {
+          exhaustParticles.splice(i, 1);
+        }
+      }
+    }
+
+    // Draw Exhaust Trail Particles behind the ship
+    function drawExhaustParticles() {
+      ctx.save();
+      for (const p of exhaustParticles) {
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Draw Upgraded Futuristic Cyber-Interceptor Airship ("z's shipz")
+    function drawPlayerShip() {
+      // Draw trailing exhaust particles first
+      drawExhaustParticles();
+
+      ctx.save();
+      const cx = player.x + player.width / 2;
+      const cy = player.y + player.height / 2;
+
+      // Subtle hover vibration + dynamic banking transform
+      const hoverOffsetY = Math.sin(player.hoverTick * 0.35) * 1.8;
+      const pulse = 0.75 + Math.sin(player.hoverTick * 0.4) * 0.25;
+
+      ctx.translate(cx, cy + hoverOffsetY);
+      ctx.rotate(player.bankAngle);
+      // Slight horizontal foreshortening when banking hard
+      const bankScaleX = 1 - Math.abs(player.bankAngle) * 0.28;
+      ctx.scale(bankScaleX, 1);
+
+      // 1. Ambient Cyan Energy Shield Aura Underneath Ship
+      const auraGrad = ctx.createRadialGradient(0, 2, 6, 0, 4, 48);
+      auraGrad.addColorStop(0, 'rgba(56, 189, 248, 0.32)');
+      auraGrad.addColorStop(0.55, 'rgba(14, 165, 233, 0.10)');
+      auraGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      ctx.fillStyle = auraGrad;
+      ctx.beginPath();
+      ctx.arc(0, 4, 48, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. Triple Animated Thruster Plumes (Twin Outer Plasma + Central Hyper-Cyan Ion Drive)
+      const sideFlameLen = 18 + Math.random() * 14;
+      const centerIonLen = 26 + Math.random() * 16;
+
+      // Twin Outer Plasma Afterburners (Left: -14, Right: +14)
+      [-14, 14].forEach(offsetX => {
+        // Outer crimson/orange plasma cone
+        const plasmaGrad = ctx.createLinearGradient(offsetX, 22, offsetX, 24 + sideFlameLen);
+        plasmaGrad.addColorStop(0, '#ef4444');
+        plasmaGrad.addColorStop(0.45, '#f59e0b');
+        plasmaGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+        ctx.fillStyle = plasmaGrad;
+        ctx.beginPath();
+        ctx.moveTo(offsetX - 5.5, 23);
+        ctx.lineTo(offsetX + 5.5, 23);
+        ctx.lineTo(offsetX, 25 + sideFlameLen);
+        ctx.closePath();
+        ctx.fill();
+
+        // White-hot inner core
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.moveTo(offsetX - 2.5, 23);
+        ctx.lineTo(offsetX + 2.5, 23);
+        ctx.lineTo(offsetX, 23 + sideFlameLen * 0.55);
+        ctx.closePath();
+        ctx.fill();
+      });
+
+      // Central Hyper-Cyan Ion Overdrive Jet
+      const ionGrad = ctx.createLinearGradient(0, 24, 0, 26 + centerIonLen);
+      ionGrad.addColorStop(0, '#e0f2fe');
+      ionGrad.addColorStop(0.35, '#38bdf8');
+      ionGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      ctx.fillStyle = ionGrad;
+      ctx.beginPath();
+      ctx.moveTo(-6, 25);
+      ctx.lineTo(6, 25);
+      ctx.lineTo(0, 27 + centerIonLen);
+      ctx.closePath();
+      ctx.fill();
+
+      // 3. Twin Wingtip Heavy Laser Cannon Barrels
+      ctx.fillStyle = '#334155';
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 1.2;
+      // Left cannon barrel
+      ctx.fillRect(-36, -12, 4, 24);
+      ctx.strokeRect(-36, -12, 4, 24);
+      // Right cannon barrel
+      ctx.fillRect(32, -12, 4, 24);
+      ctx.strokeRect(32, -12, 4, 24);
+
+      // Glowing Cyan Muzzle Tips on Wingtip Cannons
+      ctx.save();
+      ctx.fillStyle = '#38bdf8';
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(-34, -13, 2.6, 0, Math.PI * 2);
+      ctx.arc(34, -13, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 4. Outer Swept-Back Dark Titanium Gull Wings
+      const wingGrad = ctx.createLinearGradient(-38, 0, 38, 0);
+      wingGrad.addColorStop(0, '#0f172a');
+      wingGrad.addColorStop(0.5, '#1e293b');
+      wingGrad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = wingGrad;
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.8;
+
+      ctx.beginPath();
+      ctx.moveTo(0, -18);
+      ctx.lineTo(38, 8);   // Right outer wingtip
+      ctx.lineTo(35, 22);  // Right wing trailing corner
+      ctx.lineTo(18, 17);  // Right inner notch
+      ctx.lineTo(-18, 17); // Left inner notch
+      ctx.lineTo(-35, 22); // Left wing trailing corner
+      ctx.lineTo(-38, 8);  // Left outer wingtip
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // 5. Forward-Angled Crimson Strike Foils / Canard Blades
+      const crimsonGrad = ctx.createLinearGradient(0, -24, 0, 22);
+      crimsonGrad.addColorStop(0, '#f43f5e');
+      crimsonGrad.addColorStop(0.5, '#ef4444');
+      crimsonGrad.addColorStop(1, '#991b1b');
+      ctx.fillStyle = crimsonGrad;
+      ctx.strokeStyle = '#fda4af';
+      ctx.lineWidth = 1;
+
+      ctx.beginPath();
+      ctx.moveTo(0, -26);
+      ctx.lineTo(27, 4);   // Right strike blade
+      ctx.lineTo(22, 20);  // Right rear stabilizer tip
+      ctx.lineTo(11, 14);
+      ctx.lineTo(-11, 14);
+      ctx.lineTo(-22, 20); // Left rear stabilizer tip
+      ctx.lineTo(-27, 4);  // Left strike blade
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Forward Stealth Canard Winglets near Nose
+      ctx.fillStyle = '#dc2626';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(0, -28);
+      ctx.lineTo(15, -10);
+      ctx.lineTo(9, -6);
+      ctx.lineTo(-9, -6);
+      ctx.lineTo(-15, -10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // 6.Glowing Neon Cyan Panel Trim Lines on Wings
+      ctx.save();
+      ctx.strokeStyle = `rgba(56, 189, 248, ${0.65 + pulse * 0.3})`;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      // Left wing circuit line
+      ctx.moveTo(-14, 2);
+      ctx.lineTo(-31, 11);
+      ctx.lineTo(-29, 17);
+      // Right wing circuit line
+      ctx.moveTo(14, 2);
+      ctx.lineTo(31, 11);
+      ctx.lineTo(29, 17);
+      ctx.stroke();
+      ctx.restore();
+
+      // 7. Armored Central Fuselage Spine
+      const hullGrad = ctx.createLinearGradient(-12, -34, 12, 26);
+      hullGrad.addColorStop(0, '#334155');
+      hullGrad.addColorStop(0.5, '#0f172a');
+      hullGrad.addColorStop(1, '#1e293b');
+      ctx.fillStyle = hullGrad;
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.8;
+
+      ctx.beginPath();
+      ctx.moveTo(0, -35);   // Razor needle nose cone
+      ctx.lineTo(10, -12);  // Right fuselage shoulder
+      ctx.lineTo(13, 18);   // Right engine nacelle housing
+      ctx.lineTo(7, 25);    // Right tail nozzle rim
+      ctx.lineTo(-7, 25);   // Left tail nozzle rim
+      ctx.lineTo(-13, 18);  // Left engine nacelle housing
+      ctx.lineTo(-10, -12); // Left fuselage shoulder
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Metallic Engine Nozzles at Rear
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(-17, 20, 6, 4);
+      ctx.fillRect(11, 20, 6, 4);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(-4, 23, 8, 3);
+
+      // 8. Elongated Reflective Glass Cockpit Canopy
+      const canopyGrad = ctx.createLinearGradient(0, -21, 0, 5);
+      canopyGrad.addColorStop(0, '#e0f2fe');
+      canopyGrad.addColorStop(0.4, '#38bdf8');
+      canopyGrad.addColorStop(1, '#0369a1');
+      ctx.fillStyle = canopyGrad;
+      ctx.strokeStyle = '#bae6fd';
+      ctx.lineWidth = 1.2;
+
+      ctx.beginPath();
+      ctx.moveTo(0, -22);
+      ctx.lineTo(5.5, -6);
+      ctx.lineTo(3.5, 6);
+      ctx.lineTo(-3.5, 6);
+      ctx.lineTo(-5.5, -6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Specular Glass Highlight Streak on Canopy
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.beginPath();
+      ctx.moveTo(-1, -18);
+      ctx.lineTo(2, -7);
+      ctx.lineTo(0.5, -1);
+      ctx.lineTo(-2, -9);
+      ctx.closePath();
+      ctx.fill();
+
+      // 9. Pulsing Cyan Energy Core Reactor in Center Fuselage
+      ctx.save();
+      ctx.fillStyle = '#e0f2fe';
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 12 * pulse;
+      ctx.beginPath();
+      ctx.arc(0, 13, 3.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(0, 13, 6.2, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.restore();
+    }
+
+    // Update Game Physics & Logic (Executed strictly at 30 FPS)
+    function updateGame() {
+      if (isGameOver) return;
+
+      player.hoverTick++;
+
+      // Move Player Left / Right & Update Dynamic Banking Angle
+      let targetBank = 0;
+      if (keys.left) {
+        player.x -= player.speed;
+        targetBank = -0.22; // Tilt left
+      }
+      if (keys.right) {
+        player.x += player.speed;
+        targetBank = 0.22;  // Tilt right
+      }
+      // Smoothly interpolate bank angle
+      player.bankAngle += (targetBank - player.bankAngle) * 0.35;
+
+      // Keep Player within Canvas Boundaries
+      if (player.x < 18) player.x = 18;
+      if (player.x + player.width > canvas.width - 18) {
+        player.x = canvas.width - player.width - 18;
+      }
+
+      // Update Thruster Exhaust Particles
+      updateExhaustParticles();
+
+      // Update Stars
+      for (let star of stars) {
+        star.y += star.speed;
+        if (star.y > canvas.height) {
+          star.y = 0;
+          star.x = Math.random() * canvas.width;
+        }
+      }
+
+      // Spawn Obstacles periodically at 30 FPS (Tuned for 1100x800 playfield)
+      if (Math.random() < 0.125 + Math.min(loopsCompleted * 0.02, 0.11)) {
+        spawnObstacle();
+      }
+
+      // Update Obstacles & Check Collisions
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+        obs.y += obs.speed;
+
+        if (
+          checkCollision(
+            player.x,
+            player.y,
+            player.width,
+            player.height,
+            obs.x,
+            obs.y,
+            obs.width,
+            obs.height
+          )
+        ) {
+          triggerGameOver();
+          return;
+        }
+
+        // Remove off-screen obstacles and award points
+        if (obs.y > canvas.height) {
+          obstacles.splice(i, 1);
+          score += 10;
+          scoreDisplay.textContent = score;
+        }
+      }
+
+      // Check Time Loop Countdown
+      const elapsed = Date.now() - loopStart;
+      const remaining = Math.max(0, (loopTime - elapsed) / 1000);
+      loopTimerDisplay.textContent = remaining.toFixed(1) + 's';
+
+      if (elapsed >= loopTime) {
+        resetLoop(false);
+      }
+    }
+
+    // Render Scene on Canvas
+    function renderGame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Starfield
+      ctx.fillStyle = '#e2e8f0';
+      for (let star of stars) {
+        ctx.globalAlpha = 0.65;
+        ctx.fillRect(star.x, star.y, star.size, star.size);
+      }
+      ctx.globalAlpha = 1.0;
+
+      // Draw Time Loop Progress Bar at top of Canvas
+      const elapsed = Date.now() - loopStart;
+      const progress = Math.min(1, elapsed / loopTime);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+      ctx.fillRect(0, 0, canvas.width, 5);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(0, 0, canvas.width * (1 - progress), 5);
+
+      // Draw Obstacles
+      for (let obs of obstacles) {
+        ctx.save();
+        ctx.fillStyle = obs.color;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+        ctx.strokeRect(obs.x + 3, obs.y + 3, obs.width - 6, obs.height - 6);
+        ctx.restore();
+      }
+
+      // Draw Player Ship
+      drawPlayerShip();
+    }
+
+    // Constant 30 FPS Game Loop
+    function gameLoop(currentTime) {
+      requestAnimationFrame(gameLoop);
+
+      const delta = currentTime - lastFrameTime;
+
+      if (delta >= FRAME_INTERVAL) {
+        // Lock step to 30 FPS intervals
+        lastFrameTime = currentTime - (delta % FRAME_INTERVAL);
+
+        updateGame();
+        renderGame();
+
+        // Track actual FPS to verify constant 30 FPS
+        frameCount++;
+        if (currentTime - fpsTimer >= 1000) {
+          fpsDisplay.textContent = Math.min(30, frameCount);
+          frameCount = 0;
+          fpsTimer = currentTime;
+        }
+      }
+    }
+
+    // Keyboard Event Listeners (Left & Right Navigation)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        keys.left = true;
+        btnLeft.classList.add('active-press');
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        keys.right = true;
+        btnRight.classList.add('active-press');
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        keys.left = false;
+        btnLeft.classList.remove('active-press');
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        keys.right = false;
+        btnRight.classList.remove('active-press');
+      }
+    });
+
+    // Touch & Mouse Navigation Button Helpers
+    function bindNavButton(button, directionKey) {
+      const startMove = (e) => {
+        e.preventDefault();
+        if (isGameOver) return;
+        keys[directionKey] = true;
+        button.classList.add('active-press');
+      };
+
+      const stopMove = (e) => {
+        e.preventDefault();
+        keys[directionKey] = false;
+        button.classList.remove('active-press');
+      };
+
+      button.addEventListener('mousedown', startMove);
+      button.addEventListener('touchstart', startMove, { passive: false });
+
+      button.addEventListener('mouseup', stopMove);
+      button.addEventListener('mouseleave', stopMove);
+      button.addEventListener('touchend', stopMove);
+      button.addEventListener('touchcancel', stopMove);
+    }
+
+    bindNavButton(btnLeft, 'left');
+    bindNavButton(btnRight, 'right');
+
+    // Restart Button Listener
+    restartBtn.addEventListener('click', () => {
+      resetLoop(true);
+    });
+
+    // Start the game on load
+    window.onload = () => {
+      resetLoop(true);
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
